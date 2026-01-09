@@ -789,7 +789,6 @@ def _decode_value(data: JsonValue, expected_type: type | None = None) -> Any:
 
     # Check for $type discriminator
     type_name = data.get("$type")
-    assert isinstance(type_name, str), f"Invalid data for $type: {type(type_name)}"
 
     if type_name and type_name in _TYPE_REGISTRY:
         cls = _TYPE_REGISTRY[type_name]

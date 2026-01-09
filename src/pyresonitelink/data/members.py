@@ -4,6 +4,8 @@ This module contains the Member base class and its derived types including
 Reference, SyncList, SyncObject, EmptyElement, and FieldEnum.
 """
 
+# pylint: disable=invalid-name
+
 from dataclasses import dataclass, field
 
 

@@ -18,9 +18,11 @@ class Client:
     """ResoniteLink client."""
 
     _websocket: websockets.ClientConnection | None
+    _loop: asyncio.AbstractEventLoop | None
 
     def __init__(self) -> None:
         self._websocket = None
+        self._loop = None
 
     async def connect(self, port: int, host: str = "localhost") -> None:
         """Connects to the ResoniteLink server."""
@@ -28,8 +30,16 @@ class Client:
             return
 
         uri = f"ws://{host}:{port}"
-        async with websockets.connect(uri) as websocket:
-            self._websocket = websocket
+        self._websocket = await websockets.connect(uri)
+
+    def sync_connect(
+        self, port: int, host: str = "localhost", timeout: float = 10
+    ) -> None:
+        """Connects to the ResoniteLink server synchronously."""
+        self._loop = asyncio.new_event_loop()
+        self._loop.run_until_complete(
+            asyncio.wait_for(self.connect(port, host), timeout=timeout)
+        )
 
     async def request(self, message: messages.Message) -> responses.Response:
         """Sends a message to the ResoniteLink server and returns the response."""
@@ -41,6 +51,7 @@ class Client:
 
         encoded_data = codec.encode(message)
         json_data = json.dumps(encoded_data, ensure_ascii=False)
+        print(f"Sending message: {json_data}")
 
         await self._websocket.send(json_data.encode("utf-8"), text=True)
 
@@ -53,7 +64,9 @@ class Client:
 
         # There doesn't seem to be binary payload responses yet.
         response_data = await self._websocket.recv()
-        response = codec.decode_response(json.loads(response_data))
+        json_response = json.loads(response_data)
+        print(f"Received response: {json_response}")
+        response = codec.decode_response(json_response)
         return response
 
     async def close(self) -> None:
@@ -62,11 +75,22 @@ class Client:
             await self._websocket.close()
             self._websocket = None
 
+    def sync_close(self) -> None:
+        """Closes the connection to the ResoniteLink server synchronously."""
+        if self._loop is None:
+            return
+        self._loop.run_until_complete(self.close())
+        self._loop.close()
+
     def send_message[T](
         self, request: messages.Message, response_type: type[T], timeout: float = 10
     ) -> T:
         """Sends a message to the ResoniteLink server and waits for the response."""
-        response = asyncio.run(asyncio.wait_for(self.request(request), timeout=timeout))
+        if self._loop is None:
+            raise RuntimeError("Client is not connected")
+        response = self._loop.run_until_complete(
+            asyncio.wait_for(self.request(request), timeout=timeout)
+        )
         assert isinstance(
             response, response_type
         ), f"Expected response Response, got {type(response)}"
