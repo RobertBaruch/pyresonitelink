@@ -45,10 +45,11 @@ class Client:
         await self._websocket.send(json_data.encode("utf-8"), text=True)
 
         # If the message has a binary payload, send it after the json data.
-        if isinstance(message, messages.BinaryPayloadMessage):
-            binary_payload = message.encode_binary_payload()
-            if binary_payload is not None:
-                await self._websocket.send(binary_payload, text=False)
+        if (
+            isinstance(message, messages.BinaryPayloadMessage)
+            and message.payload is not None
+        ):
+            await self._websocket.send(message.payload, text=False)
 
         # There doesn't seem to be binary payload responses yet.
         response_data = await self._websocket.recv()
@@ -118,3 +119,15 @@ class Client:
     ) -> responses.Response:
         """Sends a RemoveComponent request and waits for the response."""
         return self.send_message(request, responses.Response, timeout)
+
+    def import_texture_2d_file(
+        self, request: messages.ImportTexture2DFile, timeout: float = 10
+    ) -> responses.AssetData:
+        """Sends an ImportTexture2DFile request and waits for the response."""
+        return self.send_message(request, responses.AssetData, timeout)
+
+    def import_texture_2d_rawdata(
+        self, request: messages.ImportTexture2DRawData, timeout: float = 10
+    ) -> responses.AssetData:
+        """Sends an ImportTexture2DRawData request and waits for the response."""
+        return self.send_message(request, responses.AssetData, timeout)

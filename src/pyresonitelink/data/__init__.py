@@ -194,8 +194,13 @@ from .messages import (
     AddSlot,
     AddUpdateComponent,
     AddUpdateSlotData,
+    BinaryPayloadMessage,
     GetComponent,
     GetSlot,
+    ImportTexture2DFile,
+    ImportTexture2DRawData,
+    ImportTexture2DRawDataBase,
+    ImportTexture2DRawDataHDR,
     Message,
     RemoveComponent,
     RemoveSlot,
@@ -249,6 +254,7 @@ from .primitives import (
     ushort4,
 )
 from .responses import (
+    AssetData,
     ComponentData,
     Response,
     SlotData,
@@ -271,6 +277,8 @@ from .codec import (
     decode_response,
     encode,
 )
+
+from .utils import json_ignore
 
 __all__ = [
     # Primitives - Colors
@@ -518,6 +526,7 @@ __all__ = [
     "Slot",
     # Messages
     "Message",
+    "BinaryPayloadMessage",
     "GetSlot",
     "AddUpdateSlotData",
     "AddSlot",
@@ -528,15 +537,21 @@ __all__ = [
     "AddComponent",
     "UpdateComponent",
     "RemoveComponent",
+    "ImportTexture2DFile",
+    "ImportTexture2DRawDataBase",
+    "ImportTexture2DRawData",
+    "ImportTexture2DRawDataHDR",
     # Responses
     "Response",
     "SlotData",
     "ComponentData",
+    "AssetData",
     # Codec
     "encode",
     "decode",
     "decode_message",
     "decode_response",
+    "json_ignore",
     # Type aliases
     "DataType",
     "PrimitiveType",

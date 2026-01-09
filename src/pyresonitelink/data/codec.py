@@ -9,6 +9,8 @@ from dataclasses import asdict, fields, is_dataclass
 import types
 from typing import Any, cast, get_args, get_origin
 
+from .utils import JSON_IGNORE_KEY
+
 from . import fields as field_types
 from . import members as member_types
 from . import messages as message_types
@@ -266,10 +268,16 @@ type MessageType = (
     | message_types.AddComponent
     | message_types.UpdateComponent
     | message_types.RemoveComponent
+    | message_types.ImportTexture2DFile
+    | message_types.ImportTexture2DRawData
+    | message_types.ImportTexture2DRawDataHDR
 )
 
 type ResponseType = (
-    response_types.Response | response_types.SlotData | response_types.ComponentData
+    response_types.Response
+    | response_types.SlotData
+    | response_types.ComponentData
+    | response_types.AssetData
 )
 
 type DataType = (
@@ -308,11 +316,15 @@ def _init_type_registry() -> None:
     _register_type("addComponent", message_types.AddComponent)
     _register_type("updateComponent", message_types.UpdateComponent)
     _register_type("removeComponent", message_types.RemoveComponent)
+    _register_type("importTexture2DFile", message_types.ImportTexture2DFile)
+    _register_type("importTexture2DRawData", message_types.ImportTexture2DRawData)
+    _register_type("importTexture2DRawDataHDR", message_types.ImportTexture2DRawDataHDR)
 
     # Responses
     _register_type("response", response_types.Response)
     _register_type("slotData", response_types.SlotData)
     _register_type("componentData", response_types.ComponentData)
+    _register_type("assetData", response_types.AssetData)
 
     # Workers
     _register_type("slot", worker_types.Slot)
@@ -643,8 +655,12 @@ def _encode_dataclass(obj: DataType) -> dict[str, EncodableType]:
         result["$type"] = _CLASS_TO_TYPE[cls]
 
     # Encode each field
-    for field in fields(obj):
-        value: EncodableType = getattr(obj, field.name)
+    for f in fields(obj):
+        # Skip fields marked with json_ignore
+        if f.metadata.get(JSON_IGNORE_KEY):
+            continue
+
+        value: EncodableType = getattr(obj, f.name)
 
         # Skip None values (sparse serialization)
         if value is None:
@@ -663,7 +679,7 @@ def _encode_dataclass(obj: DataType) -> dict[str, EncodableType]:
             # Primitive types are encoded as plain dicts
             encoded = {k: v for k, v in asdict(value).items() if v is not None}
 
-        result[field.name] = encoded
+        result[f.name] = encoded
 
     return result
 
@@ -804,39 +820,43 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
     _field_types = _get_field_types(cls)
     kwargs = {}
 
-    for field in fields(cls):
-        if field.name not in data or field.name == "$type":
+    for f in fields(cls):
+        # Skip fields marked with json_ignore
+        if f.metadata.get(JSON_IGNORE_KEY):
             continue
 
-        value = data[field.name]
-        field_type = _field_types.get(field.name)
+        if f.name not in data or f.name == "$type":
+            continue
+
+        value = data[f.name]
+        field_type = _field_types.get(f.name)
 
         # Handle nested dataclasses
         if isinstance(value, dict):
             value = cast(dict[str, JsonValue], value)
             # Check if value has $type
             if "$type" in value:
-                kwargs[field.name] = _decode_value(value)
+                kwargs[f.name] = _decode_value(value)
             elif field_type and is_dataclass(field_type):
                 # Decode using expected type
                 if _is_primitive_type(field_type):
-                    kwargs[field.name] = _decode_primitive(value, field_type)
+                    kwargs[f.name] = _decode_primitive(value, field_type)
                 else:
-                    kwargs[field.name] = _decode_dataclass(value, field_type)
+                    kwargs[f.name] = _decode_dataclass(value, field_type)
             else:
                 # Handle dict fields (like members in Component)
                 origin = get_origin(field_type)
                 if field_type is dict or (origin is not None and origin is dict):
                     # Decode each value in the dict
-                    kwargs[field.name] = {k: _decode_value(v) for k, v in value.items()}
+                    kwargs[f.name] = {k: _decode_value(v) for k, v in value.items()}
                 else:
-                    kwargs[field.name] = value
+                    kwargs[f.name] = value
         elif isinstance(value, list):
             value = cast(list[JsonValue], value)
             # Handle list fields
-            kwargs[field.name] = [_decode_value(item) for item in value]
+            kwargs[f.name] = [_decode_value(item) for item in value]
         else:
-            kwargs[field.name] = value
+            kwargs[f.name] = value
 
     return cls(**kwargs)
 
