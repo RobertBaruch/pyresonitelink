@@ -1,7 +1,7 @@
 [project]
 name = "pyresonitelink"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python bindings for ResoniteLink"
 readme = "README.md"
 authors = [
     { name = "Robert Baruch", email = "robert.c.baruch@gmail.com" }
