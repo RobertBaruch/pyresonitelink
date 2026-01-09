@@ -258,6 +258,19 @@ from .workers import (
     Slot,
     Worker,
 )
+from .codec import (
+    DataType,
+    FieldType,
+    MemberType,
+    MessageType,
+    PrimitiveType,
+    ResponseType,
+    WorkerType,
+    decode,
+    decode_message,
+    decode_response,
+    encode,
+)
 
 __all__ = [
     # Primitives - Colors
@@ -519,4 +532,17 @@ __all__ = [
     "Response",
     "SlotData",
     "ComponentData",
+    # Codec
+    "encode",
+    "decode",
+    "decode_message",
+    "decode_response",
+    # Type aliases
+    "DataType",
+    "PrimitiveType",
+    "MemberType",
+    "FieldType",
+    "WorkerType",
+    "MessageType",
+    "ResponseType",
 ]
