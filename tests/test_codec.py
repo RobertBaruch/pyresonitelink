@@ -259,7 +259,7 @@ class TestDecodeMessages:
         assert result.data.position.value.z == 10
 
     def test_decode_message_helper(self) -> None:
-        data = {"$type": "removeSlot", "slotId": "test_slot"}
+        data: dict[str, Any] = {"$type": "removeSlot", "slotId": "test_slot"}
         result = decode_message(data)
 
         assert isinstance(result, RemoveSlot)
@@ -346,7 +346,7 @@ class TestDecodeErrors:
     """Tests for decoding error cases."""
 
     def test_decode_missing_type_raises_value_error(self) -> None:
-        data = {"slotId": "Root"}
+        data: dict[str, Any] = {"slotId": "Root"}
 
         with pytest.raises(ValueError, match="Missing \\$type field"):
             decode(data)
@@ -358,7 +358,7 @@ class TestDecodeErrors:
             decode(data)
 
     def test_decode_response_helper_wrong_type_raises_type_error(self) -> None:
-        data = {"$type": "getSlot", "slotId": "Root"}
+        data: dict[str, Any] = {"$type": "getSlot", "slotId": "Root"}
 
         with pytest.raises(TypeError, match="Expected Response"):
             decode_response(data)

@@ -7,7 +7,7 @@ discriminator used in the ResoniteLink protocol.
 
 from dataclasses import asdict, fields, is_dataclass
 import types
-from typing import Any, get_args, get_origin
+from typing import Any, cast, get_args, get_origin
 
 from . import fields as field_types
 from . import members as member_types
@@ -254,7 +254,7 @@ type FieldType = (
     | field_types.FieldNullableDouble4x4
 )
 
-type WorkerType = (worker_types.Worker | worker_types.Slot | worker_types.Component)
+type WorkerType = worker_types.Worker | worker_types.Slot | worker_types.Component
 
 type MessageType = (
     message_types.Message
@@ -274,6 +274,10 @@ type ResponseType = (
 
 type DataType = (
     PrimitiveType | MemberType | FieldType | WorkerType | MessageType | ResponseType
+)
+
+type JsonValue = (
+    bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 )
 
 # =============================================================================
@@ -745,11 +749,6 @@ def _decode_primitive(data: dict[str, Any], cls: type) -> Any:
     return cls(**kwargs)
 
 
-type JsonValue = (
-    bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
-)
-
-
 def _decode_value(data: JsonValue, expected_type: type | None = None) -> Any:
     """Decode a JSON value to a Python object.
 
@@ -814,6 +813,7 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
 
         # Handle nested dataclasses
         if isinstance(value, dict):
+            value = cast(dict[str, JsonValue], value)
             # Check if value has $type
             if "$type" in value:
                 kwargs[field.name] = _decode_value(value)
@@ -832,6 +832,7 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
                 else:
                     kwargs[field.name] = value
         elif isinstance(value, list):
+            value = cast(list[JsonValue], value)
             # Handle list fields
             kwargs[field.name] = [_decode_value(item) for item in value]
         else:
@@ -840,7 +841,7 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
     return cls(**kwargs)
 
 
-def decode(data: dict[str, Any]) -> Any:
+def decode(data: dict[str, JsonValue]) -> Any:
     """Decode a JSON dictionary to a Python dataclass instance.
 
     Args:
@@ -863,12 +864,10 @@ def decode(data: dict[str, Any]) -> Any:
         ... }
         >>> response = decode(json_data)
     """
-    if not isinstance(data, dict):
-        raise TypeError(f"Expected a dictionary, got {type(data)}")
-
     type_name = data.get("$type")
     if not type_name:
         raise ValueError("Missing $type field in JSON data")
+    assert isinstance(type_name, str), f"Invalid type for $type: {type(type_name)}"
 
     if type_name not in _TYPE_REGISTRY:
         raise ValueError(f"Unknown type: {type_name}")
@@ -877,7 +876,7 @@ def decode(data: dict[str, Any]) -> Any:
     return _decode_dataclass(data, cls)
 
 
-def decode_response(data: dict[str, Any]) -> response_types.Response:
+def decode_response(data: dict[str, JsonValue]) -> response_types.Response:
     """Decode a JSON dictionary to a Response object.
 
     This is a convenience wrapper around decode() that provides
@@ -895,7 +894,7 @@ def decode_response(data: dict[str, Any]) -> response_types.Response:
     return result
 
 
-def decode_message(data: dict[str, Any]) -> message_types.Message:
+def decode_message(data: dict[str, JsonValue]) -> message_types.Message:
     """Decode a JSON dictionary to a Message object.
 
     This is a convenience wrapper around decode() that provides

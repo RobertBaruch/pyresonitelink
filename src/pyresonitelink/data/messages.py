@@ -109,8 +109,6 @@ class AddComponent(AddUpdateComponent):
 class UpdateComponent(AddUpdateComponent):
     """Request to update an existing component."""
 
-    pass
-
 
 @dataclass
 class RemoveComponent(Message):
@@ -121,3 +119,12 @@ class RemoveComponent(Message):
     """
 
     componentId: str | None = None
+
+
+@dataclass
+class BinaryPayloadMessage(Message):
+    """A message with a binary payload."""
+
+    def encode_binary_payload(self) -> bytes | None:
+        """Encodes the binary payload of the message."""
+        return None
