@@ -7,7 +7,9 @@ authors = [
     { name = "Robert Baruch", email = "robert.c.baruch@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "websockets>=15.0.1",
+]
 
 [build-system]
 requires = ["uv_build>=0.9.13,<0.10.0"]
