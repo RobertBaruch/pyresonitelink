@@ -1,6 +1,6 @@
 """Unit tests for the codec module."""
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,missing-function-docstring,missing-class-docstring
 
 from dataclasses import dataclass
 from typing import Any

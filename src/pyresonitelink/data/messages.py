@@ -3,6 +3,8 @@
 This module contains message classes used to send commands to Resonite.
 """
 
+# pylint: disable=invalid-name
+
 from dataclasses import dataclass
 
 from .workers import Component, Slot
@@ -49,14 +51,10 @@ class AddUpdateSlotData(Message):
 class AddSlot(AddUpdateSlotData):
     """Request to add a new slot."""
 
-    pass
-
 
 @dataclass
 class UpdateSlot(AddUpdateSlotData):
     """Request to update an existing slot."""
-
-    pass
 
 
 @dataclass

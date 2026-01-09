@@ -3,6 +3,7 @@
 We don't expect concurrent requests; request() blocks until the response is received.
 """
 
+import asyncio
 import json
 import uuid
 
@@ -59,3 +60,61 @@ class Client:
         if self._websocket is not None:
             await self._websocket.close()
             self._websocket = None
+
+    def send_message[T](
+        self, request: messages.Message, response_type: type[T], timeout: float = 10
+    ) -> T:
+        """Sends a message to the ResoniteLink server and waits for the response."""
+        response = asyncio.run(asyncio.wait_for(self.request(request), timeout=timeout))
+        assert isinstance(
+            response, response_type
+        ), f"Expected response Response, got {type(response)}"
+        return response
+
+    def get_slot(
+        self, request: messages.GetSlot, timeout: float = 10
+    ) -> responses.SlotData:
+        """Sends a GetSlot request and waits for the response."""
+        return self.send_message(request, responses.SlotData, timeout)
+
+    def get_component(
+        self, request: messages.GetComponent, timeout: float = 10
+    ) -> responses.ComponentData:
+        """Sends a GetComponent request and waits for the response."""
+        return self.send_message(request, responses.ComponentData, timeout)
+
+    def add_slot(
+        self, request: messages.AddSlot, timeout: float = 10
+    ) -> responses.Response:
+        """Sends an AddSlot request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
+
+    def update_slot(
+        self, request: messages.UpdateSlot, timeout: float = 10
+    ) -> responses.Response:
+        """Sends an UpdateSlot request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
+
+    def remove_slot(
+        self, request: messages.RemoveSlot, timeout: float = 10
+    ) -> responses.Response:
+        """Sends a RemoveSlot request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
+
+    def add_component(
+        self, request: messages.AddComponent, timeout: float = 10
+    ) -> responses.Response:
+        """Sends an AddComponent request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
+
+    def update_component(
+        self, request: messages.UpdateComponent, timeout: float = 10
+    ) -> responses.Response:
+        """Sends an UpdateComponent request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
+
+    def remove_component(
+        self, request: messages.RemoveComponent, timeout: float = 10
+    ) -> responses.Response:
+        """Sends a RemoveComponent request and waits for the response."""
+        return self.send_message(request, responses.Response, timeout)
