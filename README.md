@@ -22,5 +22,5 @@ Run `python -m pyresonitelink.cli.tree <port>`. It will download the slot hierar
 
 ## Ideas
 
-* Change the datatypes to use numpy, so that the correspond more closely with C# datatypes.
+* Change the datatypes to use numpy, so that they correspond more closely with C# datatypes. Right now it would be an error to, for example, get an unsigned byte value of 255, add 1, and then save it (256 would be out of range).
 * Add specific component models
