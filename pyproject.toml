@@ -21,6 +21,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "build>=1.4.0",
     "pytest>=9.0.2",
     "textual-dev>=1.8.0",
 ]
