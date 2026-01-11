@@ -131,9 +131,14 @@ class SlotTreeApp(App):
             return
         for child in slot.children:
             child_name = self._get_slot_name(child)
-            child_node = node.add(child_name, data=child)
-            self._add_children(child_node, child)
-            child_node.collapse()
+            if child.children:
+                # Has children - add as expandable node
+                child_node = node.add(child_name, data=child)
+                self._add_children(child_node, child)
+                child_node.collapse()
+            else:
+                # No children - add as leaf
+                node.add_leaf(child_name, data=child)
 
     def action_collapse_all(self) -> None:
         """Collapse all nodes in the tree."""
