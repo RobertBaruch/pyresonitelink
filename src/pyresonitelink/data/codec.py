@@ -9,6 +9,8 @@ from dataclasses import asdict, fields, is_dataclass
 import types
 from typing import Any, cast, get_args, get_origin
 
+import numpy as np
+
 from .utils import JSON_IGNORE_KEY
 
 from . import fields as field_types
@@ -623,6 +625,9 @@ def _encode_value(value: EncodableType) -> Any:
 
     if isinstance(value, (bool, int, float, str)):
         return value
+
+    if isinstance(value, np.integer):
+        return int(value)
 
     if isinstance(value, list):
         return [_encode_value(item) for item in value]

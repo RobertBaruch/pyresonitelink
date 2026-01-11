@@ -8,6 +8,8 @@ the C# structs used in ResoniteLink.
 
 from dataclasses import dataclass
 
+import numpy as np
+
 
 # =============================================================================
 # Color Types
@@ -18,20 +20,20 @@ from dataclasses import dataclass
 class color:
     """RGBA color with float components."""
 
-    r: float = 0.0
-    g: float = 0.0
-    b: float = 0.0
-    a: float = 1.0
+    r: np.float32 = np.float32(0)
+    g: np.float32 = np.float32(0)
+    b: np.float32 = np.float32(0)
+    a: np.float32 = np.float32(1)
 
 
 @dataclass
 class colorX:
     """RGBA color with float components and color profile."""
 
-    r: float = 0.0
-    g: float = 0.0
-    b: float = 0.0
-    a: float = 1.0
+    r: np.float32 = np.float32(0)
+    g: np.float32 = np.float32(0)
+    b: np.float32 = np.float32(0)
+    a: np.float32 = np.float32(1)
     profile: str = ""
 
 
@@ -39,10 +41,10 @@ class colorX:
 class color32:
     """RGBA color with byte components (0-255)."""
 
-    r: int = 0
-    g: int = 0
-    b: int = 0
-    a: int = 255
+    r: np.uint8 = np.uint8(0)
+    g: np.uint8 = np.uint8(0)
+    b: np.uint8 = np.uint8(0)
+    a: np.uint8 = np.uint8(255)
 
 
 # =============================================================================

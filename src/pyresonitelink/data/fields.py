@@ -9,6 +9,8 @@ are not included in these dataclasses.
 
 from dataclasses import dataclass, field
 
+import numpy as np
+
 from .members import Member
 from .primitives import (
     bool2,
@@ -67,21 +69,21 @@ from .primitives import (
 class FieldByte(Member):
     """Field containing a byte value."""
 
-    value: int = 0
+    value: np.uint8 = np.uint8(0)
 
 
 @dataclass
 class ArrayByte(Member):
     """Array of byte values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.uint8] = field(default_factory=list[np.uint8])
 
 
 @dataclass
 class FieldNullableByte(Member):
     """Field containing an optional byte value."""
 
-    value: int | None = None
+    value: np.uint8 | None = None
 
 
 @dataclass

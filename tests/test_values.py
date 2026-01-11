@@ -9,16 +9,44 @@ Run as: pytest --port=<resonite-link-port> tests/test_values.py [-s]
 
 import uuid
 
+import numpy as np
 import pytest
 
 from pyresonitelink import client
 from pyresonitelink.data import codec
+from pyresonitelink.data import fields
 from pyresonitelink.data import messages
 from pyresonitelink.data import responses
 from pyresonitelink.data import workers
 
 
 class TestValues:
+
+    async def _add_test_component(
+        self, resolink: client.Client, slot_id: str, component_type: str
+    ) -> str:
+        component_id = str(uuid.uuid4())
+        response = await resolink.add_component(
+            messages.AddComponent(
+                containerSlotId=slot_id,
+                data=workers.Component(
+                    id=component_id,
+                    componentType=component_type,
+                ),
+            ),
+        )
+        assert isinstance(response, responses.Response)
+        assert response.success is True
+        return component_id
+
+    async def _get_component(
+        self, resolink: client.Client, component_id: str
+    ) -> responses.ComponentData:
+        response = await resolink.get_component(
+            messages.GetComponent(componentId=component_id)
+        )
+        assert response.success is True
+        return response
 
     @pytest.mark.asyncio(loop_scope="session")
     async def test_get_root_slot(self, resolink: client.Client) -> None:
@@ -90,7 +118,7 @@ class TestValues:
                 containerSlotId=slot_id,
                 data=workers.Component(
                     id=component_id,
-                    componentType="[FrooxEngine]FrooxEngine.ValueField<bool>",
+                    componentType="[FrooxEngine]FrooxEngine.ValueField<byte>",
                 ),
             ),
         )
@@ -111,7 +139,10 @@ class TestValues:
         assert get_slot_response.data.components[0].id == component_id
         # This is an inconsistency in component type namings.
         # See https://github.com/Yellow-Dog-Man/ResoniteLink/issues/31
-        assert get_slot_response.data.components[0].componentType == "FrooxEngine.ValueField<bool>"
+        assert (
+            get_slot_response.data.components[0].componentType
+            == "FrooxEngine.ValueField<byte>"
+        )
 
         # Ensure the component data has the expected members.
         json_response = await resolink.request_json(
@@ -126,3 +157,46 @@ class TestValues:
         assert "UpdateOrder" in response.data.members
         assert "Enabled" in response.data.members
         assert "Value" in response.data.members
+        assert isinstance(response.data.members["UpdateOrder"], fields.FieldInt)
+        assert isinstance(response.data.members["Enabled"], fields.FieldBool)
+        assert isinstance(response.data.members["Value"], fields.FieldByte)
+
+    @pytest.mark.asyncio(loop_scope="session")
+    async def test_update_component(
+        self, resolink: client.Client, test_slot_id: str
+    ) -> None:
+        response: responses.Response  # So mypy doesn't assume a stricter type
+
+        component_id = await self._add_test_component(
+            resolink, test_slot_id, "[FrooxEngine]FrooxEngine.ValueField<byte>"
+        )
+        response = await self._get_component(resolink, component_id)
+        assert response.data is not None
+        assert isinstance(response.data.members["Value"], fields.FieldByte)
+
+        byte_field = response.data.members["Value"]
+        byte_field.value = np.uint8(123)
+
+        # Ensure we can update the field value
+        json_response = await resolink.request_json(
+            messages.UpdateComponent(
+                data=workers.Component(
+                    id=component_id,
+                    members={
+                        "Value": byte_field,
+                    },
+                ),
+            ),
+        )
+        assert json_response["success"] is True
+        response = codec.decode_response(json_response)
+        assert isinstance(response, responses.Response)
+        # From this point on, we can use update_component.
+
+        # Ensure that the update did actually update the value.
+        response = await self._get_component(resolink, component_id)
+        assert response.data is not None
+        assert isinstance(response.data.members["Value"], fields.FieldByte)
+
+        byte_field = response.data.members["Value"]
+        assert byte_field.value == np.uint8(123)

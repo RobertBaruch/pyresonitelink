@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "numpy>=2.4.1",
     "textual>=7.1.0",
     "websockets>=15.0.1",
 ]

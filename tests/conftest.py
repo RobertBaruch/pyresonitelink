@@ -1,11 +1,15 @@
 """Pytest configuration for pyresonitelink tests."""
 
 from typing import AsyncGenerator
+import uuid
 
 import pytest
 import pytest_asyncio
 
 from pyresonitelink import client
+from pyresonitelink.data import messages
+from pyresonitelink.data import responses
+from pyresonitelink.data import workers
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -30,3 +34,27 @@ async def resolink(
     await resolink_client.connect(resolink_port, host)
     yield resolink_client
     await resolink_client.close()
+
+
+@pytest_asyncio.fixture(loop_scope="session")
+async def test_slot_id(
+    resolink: client.Client,  # pylint: disable=redefined-outer-name
+) -> AsyncGenerator[str, None]:
+    """Fixture providing the ID of a test slot, created and removed for each test."""
+    slot_id = str(uuid.uuid4())
+    response = await resolink.add_slot(
+        messages.AddSlot(
+            data=workers.Slot(
+                id=slot_id,
+                parent=workers.Reference(
+                    targetId=workers.Slot.ROOT_SLOT_ID,
+                    targetType="FrooxEngine.Slot",
+                ),
+                name=workers.FieldString(value="Test Slot"),
+            )
+        ),
+    )
+    assert isinstance(response, responses.Response)
+    assert response.success is True
+    yield slot_id
+    await resolink.remove_slot(messages.RemoveSlot(slotId=slot_id))
