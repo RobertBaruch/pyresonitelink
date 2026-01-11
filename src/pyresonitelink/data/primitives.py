@@ -4,6 +4,8 @@ This module contains vector, quaternion, matrix, and color types that mirror
 the C# structs used in ResoniteLink.
 """
 
+# pylint: disable=invalid-name
+
 from dataclasses import dataclass
 
 

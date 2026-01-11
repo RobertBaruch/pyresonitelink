@@ -24,21 +24,33 @@ class Client:
         self._websocket = None
         self._loop = None
 
-    async def connect(self, port: int, host: str = "localhost") -> None:
-        """Connects to the ResoniteLink server."""
+    async def connect(
+        self, port: int, host: str = "localhost", max_size: int = 64 * 1024 * 1024
+    ) -> None:
+        """Connects to the ResoniteLink server.
+
+        Args:
+            port: Port number for the connection.
+            host: Host address.
+            max_size: Maximum size of incoming messages in bytes. Default is 64MB.
+        """
         if self._websocket is not None:
             return
 
         uri = f"ws://{host}:{port}"
-        self._websocket = await websockets.connect(uri)
+        self._websocket = await websockets.connect(uri, max_size=max_size)
 
     def sync_connect(
-        self, port: int, host: str = "localhost", timeout: float = 10
+        self,
+        port: int,
+        host: str = "localhost",
+        timeout: float = 10,
+        max_size: int = 64 * 1024 * 1024,
     ) -> None:
         """Connects to the ResoniteLink server synchronously."""
         self._loop = asyncio.new_event_loop()
         self._loop.run_until_complete(
-            asyncio.wait_for(self.connect(port, host), timeout=timeout)
+            asyncio.wait_for(self.connect(port, host, max_size), timeout=timeout)
         )
 
     async def request(self, message: messages.Message) -> responses.Response:

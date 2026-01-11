@@ -4,6 +4,8 @@ This module contains the Worker base class and its derived types including
 Slot and Component.
 """
 
+# pylint: disable=invalid-name
+
 from dataclasses import dataclass, field
 
 from .fields import FieldBool, FieldFloat3, FieldFloatQ, FieldLong, FieldString

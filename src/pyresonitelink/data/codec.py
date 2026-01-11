@@ -712,9 +712,12 @@ def encode(obj: DataType) -> dict[str, Any]:
 # =============================================================================
 
 
-def _get_field_types(cls: type) -> dict[str, type]:
-    """Get a mapping of field names to their types for a dataclass."""
-    result: dict[str, type] = {}
+def _get_field_types(cls: type) -> dict[str, Any]:
+    """Get a mapping of field names to their types for a dataclass.
+
+    Returns the full generic type (e.g., list[Slot]) to preserve element type info.
+    """
+    result: dict[str, Any] = {}
     for field in fields(cls):
         # Get the actual type, handling Optional types
         field_type = field.type
@@ -737,13 +740,8 @@ def _get_field_types(cls: type) -> dict[str, type]:
                     if arg is not type(None):
                         field_type = arg
                         break
-            # Handle list[X]
-            elif origin is list:
-                field_type = list
-            # Handle dict[K, V]
-            elif origin is dict:
-                field_type = dict
-        assert isinstance(field_type, type), f"Invalid field type: {type(field_type)}"
+            # For list[X] and dict[K, V], keep the full generic type
+            # so we can extract element types later
         result[field.name] = field_type
     return result
 
@@ -802,6 +800,10 @@ def _decode_value(data: JsonValue, expected_type: type | None = None) -> Any:
     if expected_type and expected_type in _CLASS_TO_TYPE:
         return _decode_dataclass(data, expected_type)
 
+    # If expected_type is a dataclass (like Slot), decode as that type
+    if expected_type and is_dataclass(expected_type):
+        return _decode_dataclass(data, expected_type)
+
     # Return as plain dict if we can't determine the type
     return data
 
@@ -836,7 +838,7 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
             # Check if value has $type
             if "$type" in value:
                 kwargs[f.name] = _decode_value(value)
-            elif field_type and is_dataclass(field_type):
+            elif field_type and isinstance(field_type, type) and is_dataclass(field_type):
                 # Decode using expected type
                 if _is_primitive_type(field_type):
                     kwargs[f.name] = _decode_primitive(value, field_type)
@@ -844,7 +846,7 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
                     kwargs[f.name] = _decode_dataclass(value, field_type)
             else:
                 # Handle dict fields (like members in Component)
-                origin = get_origin(field_type)
+                origin = get_origin(field_type) if field_type else None
                 if field_type is dict or (origin is not None and origin is dict):
                     # Decode each value in the dict
                     kwargs[f.name] = {k: _decode_value(v) for k, v in value.items()}
@@ -852,8 +854,18 @@ def _decode_dataclass(data: dict[str, Any], cls: type) -> Any:
                     kwargs[f.name] = value
         elif isinstance(value, list):
             value = cast(list[JsonValue], value)
-            # Handle list fields
-            kwargs[f.name] = [_decode_value(item) for item in value]
+            # Handle list fields - try to get the element type from the type hint
+            element_type = None
+            if field_type is not None:
+                origin = get_origin(field_type)
+                if origin is list:
+                    args = get_args(field_type)
+                    if args:
+                        element_type = args[0]
+                        # Handle forward references like "Slot"
+                        if isinstance(element_type, str):
+                            element_type = _TYPE_REGISTRY.get(element_type.lower())
+            kwargs[f.name] = [_decode_value(item, element_type) for item in value]
         else:
             kwargs[f.name] = value
 
