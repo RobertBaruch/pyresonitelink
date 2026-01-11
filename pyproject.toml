@@ -1,6 +1,6 @@
 [project]
 name = "pyresonitelink"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python bindings for ResoniteLink"
 readme = "README.md"
 authors = [
@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 resonite-tree = "pyresonitelink.cli.tree:main"
+resonite-dumptree = "pyresonitelink.cli.dumptree:main"
 
 [build-system]
 requires = ["uv_build>=0.9.13,<0.10.0"]
@@ -23,5 +24,10 @@ build-backend = "uv_build"
 dev = [
     "build>=1.4.0",
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.25.0",
     "textual-dev>=1.8.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

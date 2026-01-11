@@ -89,10 +89,16 @@ class SlotTreeApp(App):
             loading_label.update("Loading slot hierarchy...")
 
             response = await self.resolink.request(
-                messages.GetSlot(slotId="Root", depth=-1, includeComponentData=False)
+                messages.GetSlot(
+                    slotId=Slot.ROOT_SLOT_ID, depth=-1, includeComponentData=False
+                )
             )
 
-            if response.success and isinstance(response, responses.SlotData) and response.data:
+            if (
+                response.success
+                and isinstance(response, responses.SlotData)
+                and response.data
+            ):
                 loading_label.update("Building tree...")
                 self.root_slot = response.data
                 tree.show_root = True
@@ -168,7 +174,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Display Resonite slot hierarchy as an interactive tree"
     )
-    parser.add_argument("port", type=int, help="Port number for ResoniteLink connection")
+    parser.add_argument(
+        "port", type=int, help="Port number for ResoniteLink connection"
+    )
     parser.add_argument(
         "--host", default="localhost", help="Host address (default: localhost)"
     )
