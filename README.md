@@ -14,7 +14,7 @@ You can do this in your dashboard, under Settings (Enable ResoniteLink). It will
 
 Take a look at examples/get_root_slot.py for a very quick and dirty method to get root slot data. You can run it as `python examples/get_root_slot.py <port>`
 
-## Tree browswer
+## Tree browser
 
 Run `python -m pyresonitelink.cli.tree <port>`. It will download the slot hierarchy and then you can browse it.
 
