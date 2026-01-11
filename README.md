@@ -19,3 +19,8 @@ Take a look at examples/get_root_slot.py for a very quick and dirty method to ge
 Run `python -m pyresonitelink.cli.tree <port>`. It will download the slot hierarchy and then you can browse it.
 
 ![Screenshot of the tree browser](docs/tree_example.png "Example of the tree browser")
+
+## Ideas
+
+* Change the datatypes to use numpy, so that the correspond more closely with C# datatypes.
+* Add specific component models
