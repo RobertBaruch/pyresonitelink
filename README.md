@@ -2,6 +2,8 @@
 
 The minimum Python version for this library is 3.13.
 
+Note that because Python's native numeric types are infinite-precision integers and 64-bit floats, and Resonite has stricter types than that, this library uses `numpy` for numeric types, such as `np.uint8, np.uint16, np.float32`, and so on. It does not, however, use numpy arrays, so for example `byte2` is still a struct of two `np.uint8` values (see `src/pyresonitelink/data/primitives.py` class `byte2`). See the example code for more details, especially the `test_update_component` test in `tests/test_values.py`.
+
 ## Release
 
 I have released a pip package. Check the Releases section on the right. Install with `pip install <wheel-file>`.
@@ -12,7 +14,9 @@ You can do this in your dashboard, under Settings (Enable ResoniteLink). It will
 
 ## Sample code
 
-Take a look at examples/get_root_slot.py for a very quick and dirty method to get root slot data. You can run it as `python examples/get_root_slot.py <port>`
+Take a look at `examples/get_root_slot.py` for a very quick and dirty method to get root slot data. You can run it as `python examples/get_root_slot.py <port>`
+
+You can also look at `tests/test_values.py` to see more complex usage.
 
 ## Command-line tools
 
@@ -30,7 +34,6 @@ Run `python -m pyresonitelink.cli.tree <port>`. It will download the slot hierar
 
 ## Ideas
 
-* Change the datatypes to use numpy, so that they correspond more closely with C# datatypes. Right now it would be an error to, for example, get an unsigned byte value of 255, add 1, and then save it (256 would be out of range).
 * Add specific component models
 
 ## Bugs
