@@ -90,189 +90,189 @@ class FieldNullableByte(Member):
 class FieldUshort(Member):
     """Field containing an unsigned short value."""
 
-    value: int = 0
+    value: np.uint16 = np.uint16(0)
 
 
 @dataclass
 class ArrayUshort(Member):
     """Array of unsigned short values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.uint16] = field(default_factory=list[np.uint16])
 
 
 @dataclass
 class FieldNullableUshort(Member):
     """Field containing an optional unsigned short value."""
 
-    value: int | None = None
+    value: np.uint16 | None = None
 
 
 @dataclass
 class FieldUint(Member):
     """Field containing an unsigned int value."""
 
-    value: int = 0
+    value: np.uint32 = np.uint32(0)
 
 
 @dataclass
 class ArrayUint(Member):
     """Array of unsigned int values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.uint32] = field(default_factory=list[np.uint32])
 
 
 @dataclass
 class FieldNullableUint(Member):
     """Field containing an optional unsigned int value."""
 
-    value: int | None = None
+    value: np.uint32 | None = None
 
 
 @dataclass
 class FieldUlong(Member):
     """Field containing an unsigned long value."""
 
-    value: int = 0
+    value: np.uint64 = np.uint64(0)
 
 
 @dataclass
 class ArrayUlong(Member):
     """Array of unsigned long values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.uint64] = field(default_factory=list[np.uint64])
 
 
 @dataclass
 class FieldNullableUlong(Member):
     """Field containing an optional unsigned long value."""
 
-    value: int | None = None
+    value: np.uint64 | None = None
 
 
 @dataclass
 class FieldSbyte(Member):
     """Field containing a signed byte value."""
 
-    value: int = 0
+    value: np.int8 = np.int8(0)
 
 
 @dataclass
 class ArraySbyte(Member):
     """Array of signed byte values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.int8] = field(default_factory=list[np.int8])
 
 
 @dataclass
 class FieldNullableSbyte(Member):
     """Field containing an optional signed byte value."""
 
-    value: int | None = None
+    value: np.int8 | None = None
 
 
 @dataclass
 class FieldShort(Member):
     """Field containing a short value."""
 
-    value: int = 0
+    value: np.int16 = np.int16(0)
 
 
 @dataclass
 class ArrayShort(Member):
     """Array of short values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.int16] = field(default_factory=list[np.int16])
 
 
 @dataclass
 class FieldNullableShort(Member):
     """Field containing an optional short value."""
 
-    value: int | None = None
+    value: np.int16 | None = None
 
 
 @dataclass
 class FieldInt(Member):
     """Field containing an int value."""
 
-    value: int = 0
+    value: np.int32 = np.int32(0)
 
 
 @dataclass
 class ArrayInt(Member):
     """Array of int values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.int32] = field(default_factory=list[np.int32])
 
 
 @dataclass
 class FieldNullableInt(Member):
     """Field containing an optional int value."""
 
-    value: int | None = None
+    value: np.int32 | None = None
 
 
 @dataclass
 class FieldLong(Member):
     """Field containing a long value."""
 
-    value: int = 0
+    value: np.int64 = np.int64(0)
 
 
 @dataclass
 class ArrayLong(Member):
     """Array of long values."""
 
-    values: list[int] = field(default_factory=list[int])
+    values: list[np.int64] = field(default_factory=list[np.int64])
 
 
 @dataclass
 class FieldNullableLong(Member):
     """Field containing an optional long value."""
 
-    value: int | None = None
+    value: np.int64 | None = None
 
 
 @dataclass
 class FieldFloat(Member):
     """Field containing a float value."""
 
-    value: float = 0.0
+    value: np.float32 = np.float32(0.0)
 
 
 @dataclass
 class ArrayFloat(Member):
     """Array of float values."""
 
-    values: list[float] = field(default_factory=list[float])
+    values: list[np.float32] = field(default_factory=list[np.float32])
 
 
 @dataclass
 class FieldNullableFloat(Member):
     """Field containing an optional float value."""
 
-    value: float | None = None
+    value: np.float32 | None = None
 
 
 @dataclass
 class FieldDouble(Member):
     """Field containing a double value."""
 
-    value: float = 0.0
+    value: np.float64 = np.float64(0.0)
 
 
 @dataclass
 class ArrayDouble(Member):
     """Array of double values."""
 
-    values: list[float] = field(default_factory=list[float])
+    values: list[np.float64] = field(default_factory=list[np.float64])
 
 
 @dataclass
 class FieldNullableDouble(Member):
     """Field containing an optional double value."""
 
-    value: float | None = None
+    value: np.float64 | None = None
 
 
 @dataclass

@@ -629,6 +629,9 @@ def _encode_value(value: EncodableType) -> Any:
     if isinstance(value, np.integer):
         return int(value)
 
+    if isinstance(value, np.floating):
+        return float(value)
+
     if isinstance(value, list):
         return [_encode_value(item) for item in value]
 
