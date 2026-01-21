@@ -1,6 +1,8 @@
 """ResoniteLink client.
 
 We don't expect concurrent requests; request() blocks until the response is received.
+
+I strongly suggest using the async versions of the functions.
 """
 
 import asyncio
@@ -43,6 +45,13 @@ class Client:
 
         uri = f"ws://{host}:{port}"
         self._websocket = await websockets.connect(uri, max_size=max_size)
+
+        # Hacky fix for first request fails.
+        try:
+            await self.get_slot(messages.GetSlot(slotId="Root", depth=0))
+        except websockets.exceptions.ConnectionClosedError:
+            self._websocket = await websockets.connect(uri, max_size=max_size)
+            await self.get_slot(messages.GetSlot(slotId="Root", depth=0))
 
     def sync_connect(
         self,

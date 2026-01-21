@@ -18,6 +18,7 @@ from pyresonitelink.data import fields
 from pyresonitelink.data import messages
 from pyresonitelink.data import responses
 from pyresonitelink.data import workers
+from pyresonitelink import components
 
 
 class TestValues:
@@ -141,7 +142,7 @@ class TestValues:
         # See https://github.com/Yellow-Dog-Man/ResoniteLink/issues/31
         assert (
             get_slot_response.data.components[0].componentType
-            == "FrooxEngine.ValueField<byte>"
+            == "[FrooxEngine]FrooxEngine.ValueField<byte>"
         )
 
         # Ensure the component data has the expected members.
@@ -200,3 +201,11 @@ class TestValues:
 
         byte_field = response.data.members["Value"]
         assert byte_field.value == np.uint8(123)
+
+    @pytest.mark.asyncio(loop_scope="session")
+    @pytest.mark.parametrize("component_type", components.NAMES)
+    async def test_add_valuefield_component(
+        self, resolink: client.Client, test_slot_id: str, component_type: str
+    ) -> None:
+        print(f"Testing {component_type}")
+
