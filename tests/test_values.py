@@ -13,12 +13,12 @@ import numpy as np
 import pytest
 
 from pyresonitelink import client
+from pyresonitelink import components
 from pyresonitelink.data import codec
 from pyresonitelink.data import fields
 from pyresonitelink.data import messages
 from pyresonitelink.data import responses
 from pyresonitelink.data import workers
-from pyresonitelink import components
 
 
 class TestValues:
@@ -203,9 +203,20 @@ class TestValues:
         assert byte_field.value == np.uint8(123)
 
     @pytest.mark.asyncio(loop_scope="session")
-    @pytest.mark.parametrize("component_type", components.NAMES)
+    @pytest.mark.parametrize("value_type", ["TimeSpan"])
     async def test_add_valuefield_component(
-        self, resolink: client.Client, test_slot_id: str, component_type: str
+        self, resolink: client.Client, test_slot_id: str, value_type: str
     ) -> None:
-        print(f"Testing {component_type}")
+        print(f"Testing ValueField<{value_type}>")
+        response: responses.Response  # So mypy doesn't assume a stricter type
 
+        component_type = f"[FrooxEngine]FrooxEngine.ValueField<{value_type}>"
+        component_id = await self._add_test_component(
+            resolink, test_slot_id, component_type
+        )
+        response = await self._get_component(resolink, component_id)
+        component = components.Component.unmarshal(response)
+
+        assert component is not None
+        assert component.id == component_id
+        assert isinstance(component, components.NAME_TO_CLASS[component_type])

@@ -1,9 +1,16 @@
 """Classes representing ValueField<type> components."""
 
+from __future__ import annotations  # For forward references
+
+from dataclasses import dataclass
+from typing import Any, cast
+
 import numpy as np
 
-from .. import base
-from ...data.primitives import (
+from pyresonitelink.components import base
+from pyresonitelink.data.fields import FieldBool, FieldInt
+from pyresonitelink.data.responses import ComponentData
+from pyresonitelink.data.primitives import (
     bool2,
     bool3,
     bool4,
@@ -11,7 +18,6 @@ from ...data.primitives import (
     byte3,
     byte4,
     color,
-    color32,
     colorX,
     double2,
     double2x2,
@@ -51,99 +57,188 @@ from ...data.primitives import (
 )
 
 
+@dataclass
+class ValueFieldComponent(base.Component):
+    """Base class for ValueField<> components."""
+
+    value: Any = None
+
+    @staticmethod
+    def unmarshal(data: ComponentData) -> ValueFieldComponent:
+        assert data.data is not None
+        assert data.data.componentType is not None
+        if not data.data.componentType.startswith("[FrooxEngine]FrooxEngine.ValueField<"):
+            raise ValueError(f"Invalid component type: {data.data.componentType}")
+
+        # Lazy import to avoid circular imports
+        from pyresonitelink.components import NAME_TO_CLASS
+
+        full_type_name = data.data.componentType
+        if full_type_name not in NAME_TO_CLASS:
+            raise NotImplementedError(f"Unsupported ValueField type: {full_type_name}")
+
+        component_class = cast(
+            type["ValueFieldComponent"], NAME_TO_CLASS[full_type_name]
+        )
+
+        # Extract common fields from members
+        assert data.data.id is not None
+        members = data.data.members
+
+        # Get persistent field (FieldBool)
+        persistent_member = members.get("persistent")
+        persistent: bool = False
+        if isinstance(persistent_member, FieldBool):
+            persistent = persistent_member.value
+
+        # Get UpdateOrder field (FieldInt)
+        update_order_member = members.get("UpdateOrder")
+        update_order: np.int32 = np.int32(0)
+        if isinstance(update_order_member, FieldInt):
+            update_order = update_order_member.value
+
+        # Get Enabled field (FieldBool)
+        enabled_member = members.get("Enabled")
+        enabled: bool = False
+        if isinstance(enabled_member, FieldBool):
+            enabled = enabled_member.value
+
+        # Get Value field (type varies based on component type)
+        value_member = members.get("Value")
+        value: Any = None
+        if value_member is not None and hasattr(value_member, "value"):
+            value = getattr(value_member, "value")
+
+        return component_class(
+            id=data.data.id,
+            persistent=persistent,
+            update_order=update_order,
+            enabled=enabled,
+            value=value,
+        )
+
+
 # =============================================================================
 # Standalone Primitive Value Fields
 # =============================================================================
 
+@dataclass
+class DateTime(ValueFieldComponent):
+    """ValueField<DateTime> component."""
 
-class Bool(base.Component):
+    value: str = "0001-01-01T00:00:00"
+
+
+@dataclass
+class TimeSpan(ValueFieldComponent):
+    """ValueField<TimeSpan> component."""
+
+    value: str = "00:00:00"
+
+
+@dataclass
+class Bool(ValueFieldComponent):
     """ValueField<bool> component."""
 
-    value: bool
+    value: bool = False
 
 
-class Byte(base.Component):
+@dataclass
+class Byte(ValueFieldComponent):
     """ValueField<byte> component."""
 
-    value: np.uint8
+    value: np.uint8 = np.uint8(0)
 
 
-class UShort(base.Component):
+@dataclass
+class UShort(ValueFieldComponent):
     """ValueField<ushort> component."""
 
-    value: np.uint16
+    value: np.uint16 = np.uint16(0)
 
 
-class UInt(base.Component):
+@dataclass
+class UInt(ValueFieldComponent):
     """ValueField<uint> component."""
 
-    value: np.uint32
+    value: np.uint32 = np.uint32(0)
 
 
-class ULong(base.Component):
+@dataclass
+class ULong(ValueFieldComponent):
     """ValueField<ulong> component."""
 
-    value: np.uint64
+    value: np.uint64 = np.uint64(0)
 
 
-class SByte(base.Component):
+@dataclass
+class SByte(ValueFieldComponent):
     """ValueField<sbyte> component."""
 
-    value: np.int8
+    value: np.int8 = np.int8(0)
 
 
-class Short(base.Component):
+@dataclass
+class Short(ValueFieldComponent):
     """ValueField<short> component."""
 
-    value: np.int16
+    value: np.int16 = np.int16(0)
 
 
-class Int(base.Component):
+@dataclass
+class Int(ValueFieldComponent):
     """ValueField<int> component."""
 
-    value: np.int32
+    value: np.int32 = np.int32(0)
 
 
-class Long(base.Component):
+@dataclass
+class Long(ValueFieldComponent):
     """ValueField<long> component."""
 
-    value: np.int64
+    value: np.int64 = np.int64(0)
 
 
-class Float(base.Component):
+@dataclass
+class Float(ValueFieldComponent):
     """ValueField<float> component."""
 
-    value: np.float32
+    value: np.float32 = np.float32(0.0)
 
 
-class Double(base.Component):
+@dataclass
+class Double(ValueFieldComponent):
     """ValueField<double> component."""
 
-    value: np.float64
+    value: np.float64 = np.float64(0.0)
 
 
-class Decimal(base.Component):
+@dataclass
+class Decimal(ValueFieldComponent):
     """ValueField<decimal> component."""
 
-    value: float
+    value: float = 0.0
 
 
-class Char(base.Component):
+@dataclass
+class Char(ValueFieldComponent):
     """ValueField<char> component."""
 
-    value: str
+    value: str = ""
 
 
-class String(base.Component):
+@dataclass
+class String(ValueFieldComponent):
     """ValueField<string> component."""
 
-    value: str | None
+    value: str | None = None
 
 
-class Uri(base.Component):
+@dataclass
+class Uri(ValueFieldComponent):
     """ValueField<Uri> component."""
 
-    value: str | None
+    value: str | None = None
 
 
 # =============================================================================
@@ -151,22 +246,18 @@ class Uri(base.Component):
 # =============================================================================
 
 
-class Color(base.Component):
+@dataclass
+class Color(ValueFieldComponent):
     """ValueField<color> component."""
 
-    value: color | None
+    value: color | None = None
 
 
-class ColorX(base.Component):
+@dataclass
+class ColorX(ValueFieldComponent):
     """ValueField<colorX> component."""
 
-    value: colorX | None
-
-
-class Color32(base.Component):
-    """ValueField<color32> component."""
-
-    value: color32 | None
+    value: colorX | None = None
 
 
 # =============================================================================
@@ -174,70 +265,81 @@ class Color32(base.Component):
 # =============================================================================
 
 
-class Float2(base.Component):
+@dataclass
+class Float2(ValueFieldComponent):
     """ValueField<float2> component."""
 
-    value: float2 | None
+    value: float2 | None = None
 
 
-class Double2(base.Component):
+@dataclass
+class Double2(ValueFieldComponent):
     """ValueField<double2> component."""
 
-    value: double2 | None
+    value: double2 | None = None
 
 
-class Byte2(base.Component):
+@dataclass
+class Byte2(ValueFieldComponent):
     """ValueField<byte2> component."""
 
-    value: byte2 | None
+    value: byte2 | None = None
 
 
-class UShort2(base.Component):
+@dataclass
+class UShort2(ValueFieldComponent):
     """ValueField<ushort2> component."""
 
-    value: ushort2 | None
+    value: ushort2 | None = None
 
 
-class UInt2(base.Component):
+@dataclass
+class UInt2(ValueFieldComponent):
     """ValueField<uint2> component."""
 
-    value: uint2 | None
+    value: uint2 | None = None
 
 
-class ULong2(base.Component):
+@dataclass
+class ULong2(ValueFieldComponent):
     """ValueField<ulong2> component."""
 
-    value: ulong2 | None
+    value: ulong2 | None = None
 
 
-class SByte2(base.Component):
+@dataclass
+class SByte2(ValueFieldComponent):
     """ValueField<sbyte2> component."""
 
-    value: sbyte2 | None
+    value: sbyte2 | None = None
 
 
-class Short2(base.Component):
+@dataclass
+class Short2(ValueFieldComponent):
     """ValueField<short2> component."""
 
-    value: short2 | None
+    value: short2 | None = None
 
 
-class Int2(base.Component):
+@dataclass
+class Int2(ValueFieldComponent):
     """ValueField<int2> component."""
 
-    value: int2 | None
+    value: int2 | None = None
 
 
-class Long2(base.Component):
+@dataclass
+class Long2(ValueFieldComponent):
     """ValueField<long2> component."""
 
-    value: long2 | None
+    value: long2 | None = None
 
 
-class Bool2(base.Component):
+@dataclass
+class Bool2(ValueFieldComponent):
     """ValueField<bool2> component."""
 
-    value: bool2 | None
+    value: bool2 | None = None
 
 
 # =============================================================================
@@ -245,70 +347,81 @@ class Bool2(base.Component):
 # =============================================================================
 
 
-class Float3(base.Component):
+@dataclass
+class Float3(ValueFieldComponent):
     """ValueField<float3> component."""
 
-    value: float3 | None
+    value: float3 | None = None
 
 
-class Double3(base.Component):
+@dataclass
+class Double3(ValueFieldComponent):
     """ValueField<double3> component."""
 
-    value: double3 | None
+    value: double3 | None = None
 
 
-class Byte3(base.Component):
+@dataclass
+class Byte3(ValueFieldComponent):
     """ValueField<byte3> component."""
 
-    value: byte3 | None
+    value: byte3 | None = None
 
 
-class UShort3(base.Component):
+@dataclass
+class UShort3(ValueFieldComponent):
     """ValueField<ushort3> component."""
 
-    value: ushort3 | None
+    value: ushort3 | None = None
 
 
-class UInt3(base.Component):
+@dataclass
+class UInt3(ValueFieldComponent):
     """ValueField<uint3> component."""
 
-    value: uint3 | None
+    value: uint3 | None = None
 
 
-class ULong3(base.Component):
+@dataclass
+class ULong3(ValueFieldComponent):
     """ValueField<ulong3> component."""
 
-    value: ulong3 | None
+    value: ulong3 | None = None
 
 
-class SByte3(base.Component):
+@dataclass
+class SByte3(ValueFieldComponent):
     """ValueField<sbyte3> component."""
 
-    value: sbyte3 | None
+    value: sbyte3 | None = None
 
 
-class Short3(base.Component):
+@dataclass
+class Short3(ValueFieldComponent):
     """ValueField<short3> component."""
 
-    value: short3 | None
+    value: short3 | None = None
 
 
-class Int3(base.Component):
+@dataclass
+class Int3(ValueFieldComponent):
     """ValueField<int3> component."""
 
-    value: int3 | None
+    value: int3 | None = None
 
 
-class Long3(base.Component):
+@dataclass
+class Long3(ValueFieldComponent):
     """ValueField<long3> component."""
 
-    value: long3 | None
+    value: long3 | None = None
 
 
-class Bool3(base.Component):
+@dataclass
+class Bool3(ValueFieldComponent):
     """ValueField<bool3> component."""
 
-    value: bool3 | None
+    value: bool3 | None = None
 
 
 # =============================================================================
@@ -316,70 +429,81 @@ class Bool3(base.Component):
 # =============================================================================
 
 
-class Float4(base.Component):
+@dataclass
+class Float4(ValueFieldComponent):
     """ValueField<float4> component."""
 
-    value: float4 | None
+    value: float4 | None = None
 
 
-class Double4(base.Component):
+@dataclass
+class Double4(ValueFieldComponent):
     """ValueField<double4> component."""
 
-    value: double4 | None
+    value: double4 | None = None
 
 
-class Byte4(base.Component):
+@dataclass
+class Byte4(ValueFieldComponent):
     """ValueField<byte4> component."""
 
-    value: byte4 | None
+    value: byte4 | None = None
 
 
-class UShort4(base.Component):
+@dataclass
+class UShort4(ValueFieldComponent):
     """ValueField<ushort4> component."""
 
-    value: ushort4 | None
+    value: ushort4 | None = None
 
 
-class UInt4(base.Component):
+@dataclass
+class UInt4(ValueFieldComponent):
     """ValueField<uint4> component."""
 
-    value: uint4 | None
+    value: uint4 | None = None
 
 
-class ULong4(base.Component):
+@dataclass
+class ULong4(ValueFieldComponent):
     """ValueField<ulong4> component."""
 
-    value: ulong4 | None
+    value: ulong4 | None = None
 
 
-class SByte4(base.Component):
+@dataclass
+class SByte4(ValueFieldComponent):
     """ValueField<sbyte4> component."""
 
-    value: sbyte4 | None
+    value: sbyte4 | None = None
 
 
-class Short4(base.Component):
+@dataclass
+class Short4(ValueFieldComponent):
     """ValueField<short4> component."""
 
-    value: short4 | None
+    value: short4 | None = None
 
 
-class Int4(base.Component):
+@dataclass
+class Int4(ValueFieldComponent):
     """ValueField<int4> component."""
 
-    value: int4 | None
+    value: int4 | None = None
 
 
-class Long4(base.Component):
+@dataclass
+class Long4(ValueFieldComponent):
     """ValueField<long4> component."""
 
-    value: long4 | None
+    value: long4 | None = None
 
 
-class Bool4(base.Component):
+@dataclass
+class Bool4(ValueFieldComponent):
     """ValueField<bool4> component."""
 
-    value: bool4 | None
+    value: bool4 | None = None
 
 
 # =============================================================================
@@ -387,16 +511,18 @@ class Bool4(base.Component):
 # =============================================================================
 
 
-class FloatQ(base.Component):
+@dataclass
+class FloatQ(ValueFieldComponent):
     """ValueField<floatQ> component."""
 
-    value: floatQ | None
+    value: floatQ | None = None
 
 
-class DoubleQ(base.Component):
+@dataclass
+class DoubleQ(ValueFieldComponent):
     """ValueField<doubleQ> component."""
 
-    value: doubleQ | None
+    value: doubleQ | None = None
 
 
 # =============================================================================
@@ -404,16 +530,18 @@ class DoubleQ(base.Component):
 # =============================================================================
 
 
-class Float2x2(base.Component):
+@dataclass
+class Float2x2(ValueFieldComponent):
     """ValueField<float2x2> component."""
 
-    value: float2x2 | None
+    value: float2x2 | None = None
 
 
-class Double2x2(base.Component):
+@dataclass
+class Double2x2(ValueFieldComponent):
     """ValueField<double2x2> component."""
 
-    value: double2x2 | None
+    value: double2x2 | None = None
 
 
 # =============================================================================
@@ -421,16 +549,18 @@ class Double2x2(base.Component):
 # =============================================================================
 
 
-class Float3x3(base.Component):
+@dataclass
+class Float3x3(ValueFieldComponent):
     """ValueField<float3x3> component."""
 
-    value: float3x3 | None
+    value: float3x3 | None = None
 
 
-class Double3x3(base.Component):
+@dataclass
+class Double3x3(ValueFieldComponent):
     """ValueField<double3x3> component."""
 
-    value: double3x3 | None
+    value: double3x3 | None = None
 
 
 # =============================================================================
@@ -438,13 +568,15 @@ class Double3x3(base.Component):
 # =============================================================================
 
 
-class Float4x4(base.Component):
+@dataclass
+class Float4x4(ValueFieldComponent):
     """ValueField<float4x4> component."""
 
-    value: float4x4 | None
+    value: float4x4 | None = None
 
 
-class Double4x4(base.Component):
+@dataclass
+class Double4x4(ValueFieldComponent):
     """ValueField<double4x4> component."""
 
-    value: double4x4 | None
+    value: double4x4 | None = None
