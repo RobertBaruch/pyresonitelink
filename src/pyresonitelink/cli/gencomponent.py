@@ -203,15 +203,16 @@ Examples:
                 print(f"  Filtering by prefix: {prefix_filter}")
             print(f"Output directory: {output_dir}")
 
-        for def_name, component in schema_parser.iter_multi_schema(
+        for def_name, components in schema_parser.iter_multi_schema(
             multi_schema_path, prefix_filter=prefix_filter
         ):
             try:
                 if args.verbose:
-                    print(f"  Processing: {def_name}")
+                    variant_info = f" ({len(components)} variants)" if len(components) > 1 else ""
+                    print(f"  Processing: {def_name}{variant_info}")
 
-                generated = generator.generate_from_component(
-                    component, multi_schema_path.name
+                generated = generator.generate_from_components(
+                    components, multi_schema_path.name
                 )
 
                 if args.dry_run:

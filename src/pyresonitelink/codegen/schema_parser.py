@@ -357,12 +357,15 @@ class SchemaParser:
         self,
         schema_path: Path,
         prefix_filter: str | None = None,
-    ) -> Iterator[tuple[str, ParsedComponent]]:
+    ) -> Iterator[tuple[str, list[ParsedComponent]]]:
         """Iterate over components in a multi-component schema file.
 
         Multi-component schema files have multiple component definitions in
         their `$defs` section. Each definition key is the component name
         (e.g., "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Playback.ClipLengthDouble").
+
+        For generic components (those with `oneOf`), yields a list of variant
+        components that should be generated into a single file.
 
         Args:
             schema_path: Path to the multi-component schema JSON file.
@@ -370,7 +373,9 @@ class SchemaParser:
                 starts with this prefix.
 
         Yields:
-            Tuples of (def_name, ParsedComponent) for each component.
+            Tuples of (def_name, list[ParsedComponent]) for each component.
+            Non-generic components yield a single-item list.
+            Generic components yield multiple variants.
         """
         with open(schema_path, encoding="utf-8") as f:
             schema = json.load(f)
@@ -383,6 +388,15 @@ class SchemaParser:
             if prefix_filter and not def_name.startswith(prefix_filter):
                 continue
 
+            # Check if this is a generic component (has oneOf)
+            if "oneOf" in def_schema:
+                components = self._parse_generic_def(
+                    def_name, def_schema, schema_id
+                )
+                if components:
+                    yield def_name, components
+                continue
+
             # Check if this def looks like a component (has componentType property)
             properties = def_schema.get("properties", {})
             if "componentType" not in properties:
@@ -393,7 +407,46 @@ class SchemaParser:
                 def_name, def_schema, schema_id, defs
             )
             if component:
-                yield def_name, component
+                yield def_name, [component]
+
+    def _parse_generic_def(
+        self,
+        def_name: str,
+        def_schema: dict[str, Any],
+        parent_schema_id: str,
+    ) -> list[ParsedComponent]:
+        """Parse a generic component definition with oneOf variants.
+
+        Args:
+            def_name: The key name in $defs (e.g., "...ValueAdd_1").
+            def_schema: The schema object for this definition.
+            parent_schema_id: The $id of the parent schema file.
+
+        Returns:
+            List of ParsedComponent for each variant.
+        """
+        components: list[ParsedComponent] = []
+        local_defs = def_schema.get("$defs", {})
+        base_title = def_schema.get("title", def_name.split(".")[-1])
+
+        # Remove _1, _2 suffixes from base title (generic arity markers)
+        base_title = re.sub(r"_\d+$", "", base_title)
+
+        for one_of_item in def_schema.get("oneOf", []):
+            ref = one_of_item.get("$ref", "")
+            local_def_name = self.type_mapper.parse_local_ref(ref)
+            if local_def_name and local_def_name in local_defs:
+                variant_schema = local_defs[local_def_name]
+                component = self._parse_variant(
+                    variant_schema,
+                    f"{def_name}.schema.json",  # Synthetic schema ID
+                    base_title,
+                    local_defs,
+                )
+                if component:
+                    components.append(component)
+
+        return components
 
     def _parse_def_as_component(
         self,

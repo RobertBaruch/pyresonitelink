@@ -82,6 +82,40 @@ class CodeGenerator:
 
         return GeneratedFile(filename=filename, content=content)
 
+    def generate_from_components(
+        self, components: list[ParsedComponent], schema_filename: str
+    ) -> GeneratedFile:
+        """Generate Python code from a list of parsed components.
+
+        For single non-generic components, generates a single class.
+        For multiple components (generic variants), generates a base class
+        and variant classes.
+
+        Args:
+            components: List of parsed components to generate code for.
+            schema_filename: The schema filename to reference in the generated code.
+
+        Returns:
+            GeneratedFile with the output filename and content.
+        """
+        if not components:
+            raise ValueError("No components provided")
+
+        # Determine output filename from first component's schema_id
+        filename = self._schema_to_filename(
+            components[0].schema_id.replace(".schema.json", "")
+        )
+
+        # Generate code
+        if len(components) == 1 and not components[0].is_generic:
+            # Single non-generic component
+            content = self._generate_single_component(components[0], schema_filename)
+        else:
+            # Generic component with variants
+            content = self._generate_generic_component(components, schema_filename)
+
+        return GeneratedFile(filename=filename, content=content)
+
     def _schema_to_filename(self, schema_stem: str) -> str:
         """Convert schema filename stem to Python module path.
 

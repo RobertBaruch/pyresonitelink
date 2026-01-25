@@ -31,7 +31,7 @@ class FormatDateTimeAsTime(GeneratedComponent):
         "show_milliseconds": "ShowMilliseconds",
         "show_seconds": "ShowSeconds",
         "update_order": "UpdateOrder",
-        "use24_hour_clock": "Use24HourClock",
+        "use24hour_clock": "Use24HourClock",
     }
 
     date: Reference | None = None  # -> FrooxEngine.ProtoFlux.INodeValueOutput<[System.Private.CoreLib]System.DateTime>
@@ -41,4 +41,4 @@ class FormatDateTimeAsTime(GeneratedComponent):
     show_milliseconds: Reference | None = None  # -> FrooxEngine.ProtoFlux.INodeValueOutput<bool>
     show_seconds: Reference | None = None  # -> FrooxEngine.ProtoFlux.INodeValueOutput<bool>
     update_order: FieldInt | None = None
-    use24_hour_clock: Reference | None = None  # -> FrooxEngine.ProtoFlux.INodeValueOutput<bool>
+    use24hour_clock: Reference | None = None  # -> FrooxEngine.ProtoFlux.INodeValueOutput<bool>
