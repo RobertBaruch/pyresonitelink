@@ -6,6 +6,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any
 
 from .type_mapper import MemberType, TypeMapper, TypeMapping
@@ -351,3 +352,97 @@ class SchemaParser:
         """
         match = re.search(r"<([^>]+)>", component_type)
         return match.group(1) if match else None
+
+    def iter_multi_schema(
+        self,
+        schema_path: Path,
+        prefix_filter: str | None = None,
+    ) -> Iterator[tuple[str, ParsedComponent]]:
+        """Iterate over components in a multi-component schema file.
+
+        Multi-component schema files have multiple component definitions in
+        their `$defs` section. Each definition key is the component name
+        (e.g., "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Playback.ClipLengthDouble").
+
+        Args:
+            schema_path: Path to the multi-component schema JSON file.
+            prefix_filter: If provided, only yield components whose def name
+                starts with this prefix.
+
+        Yields:
+            Tuples of (def_name, ParsedComponent) for each component.
+        """
+        with open(schema_path, encoding="utf-8") as f:
+            schema = json.load(f)
+
+        schema_id = schema.get("$id", schema_path.name)
+        defs = schema.get("$defs", {})
+
+        for def_name, def_schema in defs.items():
+            # Apply prefix filter if provided
+            if prefix_filter and not def_name.startswith(prefix_filter):
+                continue
+
+            # Check if this def looks like a component (has componentType property)
+            properties = def_schema.get("properties", {})
+            if "componentType" not in properties:
+                continue
+
+            # Parse as a single component, using def_name as schema_id
+            component = self._parse_def_as_component(
+                def_name, def_schema, schema_id, defs
+            )
+            if component:
+                yield def_name, component
+
+    def _parse_def_as_component(
+        self,
+        def_name: str,
+        def_schema: dict[str, Any],
+        parent_schema_id: str,
+        all_defs: dict[str, Any],
+    ) -> ParsedComponent | None:
+        """Parse a $def entry as a component.
+
+        Args:
+            def_name: The key name in $defs (e.g., "FrooxEngine.ProtoFlux...").
+            def_schema: The schema object for this definition.
+            parent_schema_id: The $id of the parent schema file.
+            all_defs: All $defs from the parent schema (for local ref resolution).
+
+        Returns:
+            ParsedComponent if successfully parsed, None otherwise.
+        """
+        properties = def_schema.get("properties", {})
+
+        # Get component type
+        component_type_prop = properties.get("componentType", {})
+        component_type = component_type_prop.get("const", "")
+        if not component_type:
+            return None
+
+        title = def_schema.get("title", def_name.split(".")[-1])
+
+        # Parse members
+        members_schema = properties.get("members", {})
+        members = self._parse_members(
+            members_schema.get("properties", {}), all_defs
+        )
+
+        # Extract local enums from all_defs
+        local_enums = self._extract_local_enums(all_defs)
+
+        # Check if this is a generic component (has type parameter)
+        type_param = self._extract_type_parameter(component_type)
+
+        return ParsedComponent(
+            schema_id=f"{def_name}.schema.json",  # Synthetic schema ID for filename generation
+            title=title,
+            description=def_schema.get("description"),
+            component_type=component_type,
+            is_generic=type_param is not None,
+            type_parameter=type_param,
+            base_name=title,
+            members=members,
+            local_enums=local_enums,
+        )

@@ -64,6 +64,12 @@ Examples:
 
   # Preview without writing files
   python -m pyresonitelink.cli.gencomponent /path/to/schemas --dry-run
+
+  # Generate from a multi-component schema file
+  python -m pyresonitelink.cli.gencomponent /path/to/schemas --multi-schema protoflux.schema.json
+
+  # Generate only FrooxEngine ProtoFlux nodes from a multi-schema file
+  python -m pyresonitelink.cli.gencomponent /path/to/schemas -m protoflux.schema.json -p FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine
         """,
     )
 
@@ -95,6 +101,22 @@ Examples:
         type=str,
         default=None,
         help="Generate only a specific component (by schema filename without .schema.json)",
+    )
+
+    parser.add_argument(
+        "--multi-schema",
+        "-m",
+        type=pathlib.Path,
+        default=None,
+        help="Process a multi-component schema file (contains multiple components in $defs)",
+    )
+
+    parser.add_argument(
+        "--prefix",
+        "-p",
+        type=str,
+        default=None,
+        help="Filter components by prefix (only for --multi-schema mode)",
     )
 
     parser.add_argument(
@@ -159,61 +181,113 @@ Examples:
     schema_parser = codegen.SchemaParser(common_schema_path)
     generator = codegen.CodeGenerator(schema_parser)
 
-    # Find schema files to process
-    if args.component:
-        # Single component
-        schema_name = args.component
-        if not schema_name.endswith(".schema.json"):
-            schema_name = f"{schema_name}.schema.json"
-        schema_files = [schema_dir / schema_name]
-        if not schema_files[0].exists():
-            print(f"Error: Schema file not found: {schema_files[0]}", file=sys.stderr)
-            return 1
-    else:
-        # All component schemas
-        schema_files = list(schema_dir.glob("*.schema.json"))
-        # Exclude common.schema.json
-        schema_files = [f for f in schema_files if f.name != "common.schema.json"]
-
-    if not schema_files:
-        print("No schema files found to process.", file=sys.stderr)
-        return 1
-
-    if args.verbose:
-        print(f"Processing {len(schema_files)} schema file(s)...")
-        print(f"Output directory: {output_dir}")
-
     # Process each schema
     success_count = 0
     error_count = 0
 
-    for schema_path in sorted(schema_files):
-        try:
-            if args.verbose:
-                print(f"  Processing: {schema_path.name}")
+    # Handle multi-schema mode
+    if args.multi_schema:
+        multi_schema_path: pathlib.Path = args.multi_schema
+        # Resolve relative to schema_dir if not absolute
+        if not multi_schema_path.is_absolute():
+            multi_schema_path = schema_dir / multi_schema_path
+        if not multi_schema_path.exists():
+            print(f"Error: Multi-schema file not found: {multi_schema_path}", file=sys.stderr)
+            return 1
 
-            generated = generator.generate_from_schema(schema_path)
+        prefix_filter: str | None = args.prefix
 
-            if args.dry_run:
-                print(f"\n{'='*60}")
-                print(f"# {generated.filename}")
-                print(f"{'='*60}")
-                print(generated.content)
-            else:
-                output_path = output_dir / generated.filename
-                # Create subdirectories and __init__.py files if needed
-                if output_path.parent != output_dir:
-                    _ensure_package_dirs(output_dir, output_path.parent)
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(generated.content)
+        if args.verbose:
+            print(f"Processing multi-schema file: {multi_schema_path}")
+            if prefix_filter:
+                print(f"  Filtering by prefix: {prefix_filter}")
+            print(f"Output directory: {output_dir}")
+
+        for def_name, component in schema_parser.iter_multi_schema(
+            multi_schema_path, prefix_filter=prefix_filter
+        ):
+            try:
                 if args.verbose:
-                    print(f"    -> {output_path}")
+                    print(f"  Processing: {def_name}")
 
-            success_count += 1
+                generated = generator.generate_from_component(
+                    component, multi_schema_path.name
+                )
 
-        except Exception as e:
-            print(f"Error processing {schema_path.name}: {e}", file=sys.stderr)
-            error_count += 1
+                if args.dry_run:
+                    print(f"\n{'='*60}")
+                    print(f"# {generated.filename}")
+                    print(f"{'='*60}")
+                    print(generated.content)
+                else:
+                    output_path = output_dir / generated.filename
+                    # Create subdirectories and __init__.py files if needed
+                    if output_path.parent != output_dir:
+                        _ensure_package_dirs(output_dir, output_path.parent)
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(generated.content)
+                    if args.verbose:
+                        print(f"    -> {output_path}")
+
+                success_count += 1
+
+            except Exception as e:
+                print(f"Error processing {def_name}: {e}", file=sys.stderr)
+                error_count += 1
+
+    else:
+        # Standard mode: process individual schema files
+        # Find schema files to process
+        if args.component:
+            # Single component
+            schema_name = args.component
+            if not schema_name.endswith(".schema.json"):
+                schema_name = f"{schema_name}.schema.json"
+            schema_files = [schema_dir / schema_name]
+            if not schema_files[0].exists():
+                print(f"Error: Schema file not found: {schema_files[0]}", file=sys.stderr)
+                return 1
+        else:
+            # All component schemas
+            schema_files = list(schema_dir.glob("*.schema.json"))
+            # Exclude common.schema.json
+            schema_files = [f for f in schema_files if f.name != "common.schema.json"]
+
+        if not schema_files:
+            print("No schema files found to process.", file=sys.stderr)
+            return 1
+
+        if args.verbose:
+            print(f"Processing {len(schema_files)} schema file(s)...")
+            print(f"Output directory: {output_dir}")
+
+        for schema_path in sorted(schema_files):
+            try:
+                if args.verbose:
+                    print(f"  Processing: {schema_path.name}")
+
+                generated = generator.generate_from_schema(schema_path)
+
+                if args.dry_run:
+                    print(f"\n{'='*60}")
+                    print(f"# {generated.filename}")
+                    print(f"{'='*60}")
+                    print(generated.content)
+                else:
+                    output_path = output_dir / generated.filename
+                    # Create subdirectories and __init__.py files if needed
+                    if output_path.parent != output_dir:
+                        _ensure_package_dirs(output_dir, output_path.parent)
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(generated.content)
+                    if args.verbose:
+                        print(f"    -> {output_path}")
+
+                success_count += 1
+
+            except Exception as e:
+                print(f"Error processing {schema_path.name}: {e}", file=sys.stderr)
+                error_count += 1
 
     # Summary
     if not args.dry_run:

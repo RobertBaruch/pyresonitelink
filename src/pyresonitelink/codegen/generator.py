@@ -59,6 +59,29 @@ class CodeGenerator:
 
         return GeneratedFile(filename=filename, content=content)
 
+    def generate_from_component(
+        self, component: ParsedComponent, schema_filename: str
+    ) -> GeneratedFile:
+        """Generate Python code from a parsed component.
+
+        This is useful for generating code from components parsed from
+        multi-component schema files.
+
+        Args:
+            component: The parsed component to generate code for.
+            schema_filename: The schema filename to reference in the generated code.
+
+        Returns:
+            GeneratedFile with the output filename and content.
+        """
+        # Determine output filename from component's schema_id
+        filename = self._schema_to_filename(component.schema_id.replace(".schema.json", ""))
+
+        # Generate code for the single component
+        content = self._generate_single_component(component, schema_filename)
+
+        return GeneratedFile(filename=filename, content=content)
+
     def _schema_to_filename(self, schema_stem: str) -> str:
         """Convert schema filename stem to Python module path.
 
@@ -68,17 +91,19 @@ class CodeGenerator:
             "FrooxEngine.StaticLocaleProvider.schema" -> "static_locale_provider.py"
             "FrooxEngine.BooleanValueDriver_1.schema" -> "boolean_value_driver.py"
             "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Playback.ClipLengthDouble.schema"
-                -> "protoflux/playback/clip_length_double.py"
+                -> "protoflux/froox_engine/playback/clip_length_double.py"
+            "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.Math.Add.schema"
+                -> "protoflux/math/add.py"
         """
         # Remove .schema suffix if present
         name = schema_stem.replace(".schema", "")
 
         # Check for ProtoFlux prefix
-        protoflux_prefix = "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine."
+        protoflux_prefix = "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes."
         if name.startswith(protoflux_prefix):
             # Extract the path after the prefix
             remainder = name[len(protoflux_prefix):]
-            # Split into parts (e.g., "Playback.ClipLengthDouble" -> ["Playback", "ClipLengthDouble"])
+            # Split into parts (e.g., "FrooxEngine.Playback.ClipLengthDouble" -> ["FrooxEngine", "Playback", "ClipLengthDouble"])
             parts = remainder.split(".")
             # Convert each part to snake_case
             snake_parts = [self.type_mapper.to_python_name(p) for p in parts]
@@ -91,7 +116,7 @@ class CodeGenerator:
         if name.startswith("FrooxEngine."):
             name = name[len("FrooxEngine."):]
 
-        # Remove other ProtoFlux prefix variations (non-FrooxEngine nodes)
+        # Remove other ProtoFlux prefix variations (non-standard paths)
         name = re.sub(r"^ProtoFlux\..*?\.Nodes\.", "", name)
 
         # Remove _1, _2 suffixes (generic arity markers)

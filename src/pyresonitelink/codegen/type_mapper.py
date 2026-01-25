@@ -551,14 +551,15 @@ class TypeMapper:
             "URL" -> "url"
             "persistent" -> "persistent"
             "class" -> "class_"
+            "Geometry2D" -> "geometry2d"
         """
         # Handle already lowercase names
         if member_name.islower():
             result = member_name
         else:
             # Convert PascalCase/camelCase to snake_case
-            # Insert underscore before uppercase letters
-            result = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", member_name)
+            # Insert underscore before uppercase letters (but not after digits)
+            result = re.sub(r"([a-z])([A-Z])", r"\1_\2", member_name)
             # Handle consecutive uppercase (e.g., "URL" -> "url", "URLPath" -> "url_path")
             result = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", result)
             result = result.lower()
