@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, fields
+import uuid
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any, ClassVar, Self
 
@@ -14,12 +15,22 @@ from referencing.jsonschema import DRAFT202012
 from pyresonitelink.data import codec
 
 
+def _generate_uuid() -> str:
+    """Generate a random UUID v4 string.
+
+    Returns:
+        A new random UUID v4 as a string.
+    """
+    return str(uuid.uuid4())
+
+
 @dataclass
 class GeneratedComponent:
     """Base class for generated component classes.
 
     Provides common serialization/deserialization methods and
-    schema validation support.
+    schema validation support. When constructed directly (not through
+    deserialization), the id is automatically set to a random UUID v4.
     """
 
     # Override in subclasses
@@ -31,7 +42,7 @@ class GeneratedComponent:
     _MEMBER_NAME_MAP: ClassVar[dict[str, str]] = {}
 
     # Common fields for all components
-    id: str = ""
+    id: str = field(default_factory=_generate_uuid)
     is_reference_only: bool = False
 
     @classmethod
