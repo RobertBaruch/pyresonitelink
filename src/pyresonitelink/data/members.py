@@ -6,7 +6,17 @@ Reference, SyncList, SyncObject, EmptyElement, and FieldEnum.
 
 # pylint: disable=invalid-name
 
+import uuid
 from dataclasses import dataclass, field
+
+
+def _generate_uuid() -> str:
+    """Generate a random UUID v4 string.
+
+    Returns:
+        A new random UUID v4 as a string.
+    """
+    return str(uuid.uuid4())
 
 
 @dataclass
@@ -14,10 +24,11 @@ class Member:
     """Base class for all member types.
 
     Members are elements that belong to components or sync objects and can be
-    referenced by their unique ID.
+    referenced by their unique ID. When constructed directly (not through
+    deserialization), the id is automatically set to a random UUID v4.
     """
 
-    id: str | None = None
+    id: str = field(default_factory=_generate_uuid)
 
 
 @dataclass
