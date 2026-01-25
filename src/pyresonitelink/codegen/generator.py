@@ -60,20 +60,38 @@ class CodeGenerator:
         return GeneratedFile(filename=filename, content=content)
 
     def _schema_to_filename(self, schema_stem: str) -> str:
-        """Convert schema filename stem to Python module name.
+        """Convert schema filename stem to Python module path.
+
+        For ProtoFlux components, creates a nested module structure under protoflux/.
 
         Examples:
             "FrooxEngine.StaticLocaleProvider.schema" -> "static_locale_provider.py"
             "FrooxEngine.BooleanValueDriver_1.schema" -> "boolean_value_driver.py"
+            "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Playback.ClipLengthDouble.schema"
+                -> "protoflux/playback/clip_length_double.py"
         """
         # Remove .schema suffix if present
         name = schema_stem.replace(".schema", "")
 
+        # Check for ProtoFlux prefix
+        protoflux_prefix = "FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine."
+        if name.startswith(protoflux_prefix):
+            # Extract the path after the prefix
+            remainder = name[len(protoflux_prefix):]
+            # Split into parts (e.g., "Playback.ClipLengthDouble" -> ["Playback", "ClipLengthDouble"])
+            parts = remainder.split(".")
+            # Convert each part to snake_case
+            snake_parts = [self.type_mapper.to_python_name(p) for p in parts]
+            # Remove _1, _2 suffixes from the last part (generic arity markers)
+            snake_parts[-1] = re.sub(r"_\d+$", "", snake_parts[-1])
+            # Build path: protoflux/submodule/.../filename.py
+            return "protoflux/" + "/".join(snake_parts[:-1] + [f"{snake_parts[-1]}.py"]).lstrip("/")
+
         # Remove FrooxEngine. prefix
         if name.startswith("FrooxEngine."):
-            name = name[len("FrooxEngine.") :]
+            name = name[len("FrooxEngine."):]
 
-        # Remove ProtoFlux prefix variations
+        # Remove other ProtoFlux prefix variations (non-FrooxEngine nodes)
         name = re.sub(r"^ProtoFlux\..*?\.Nodes\.", "", name)
 
         # Remove _1, _2 suffixes (generic arity markers)

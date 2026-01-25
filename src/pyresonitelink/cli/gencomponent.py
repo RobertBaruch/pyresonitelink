@@ -9,6 +9,39 @@ import sys
 from pyresonitelink import codegen
 
 
+def _ensure_package_dirs(base_dir: pathlib.Path, target_dir: pathlib.Path) -> None:
+    """Create directories and __init__.py files to make a valid Python package.
+
+    Creates all intermediate directories between base_dir and target_dir,
+    adding __init__.py files to each to make them proper Python packages.
+
+    Args:
+        base_dir: The base output directory (already a package).
+        target_dir: The target directory that needs to exist as a package.
+    """
+    # Get relative path from base to target
+    try:
+        rel_path = target_dir.relative_to(base_dir)
+    except ValueError:
+        # target_dir is not under base_dir, just create the directory
+        target_dir.mkdir(parents=True, exist_ok=True)
+        return
+
+    # Create each intermediate directory with __init__.py
+    current = base_dir
+    for part in rel_path.parts:
+        current = current / part
+        current.mkdir(exist_ok=True)
+        init_file = current / "__init__.py"
+        if not init_file.exists():
+            # Create empty __init__.py with a docstring
+            module_name = part.replace("_", " ").title().replace(" ", "")
+            init_file.write_text(
+                f'"""Generated {module_name} components."""\n',
+                encoding="utf-8",
+            )
+
+
 def main() -> int:
     """Main entry point for the component generator CLI.
 
@@ -168,6 +201,9 @@ Examples:
                 print(generated.content)
             else:
                 output_path = output_dir / generated.filename
+                # Create subdirectories and __init__.py files if needed
+                if output_path.parent != output_dir:
+                    _ensure_package_dirs(output_dir, output_path.parent)
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(generated.content)
                 if args.verbose:
