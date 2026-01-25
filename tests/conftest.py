@@ -53,8 +53,9 @@ async def test_slot_id(
                 name=workers.FieldString(value="Test Slot"),
             )
         ),
+        debug=True,
     )
     assert isinstance(response, responses.Response)
     assert response.success is True
     yield slot_id
-    await resolink.remove_slot(messages.RemoveSlot(slotId=slot_id))
+    await resolink.remove_slot(messages.RemoveSlot(slotId=slot_id), debug=True)

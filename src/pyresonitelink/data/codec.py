@@ -124,6 +124,12 @@ type FieldType = (
     | field_types.ArrayString
     | field_types.FieldUri
     | field_types.ArrayUri
+    | field_types.FieldTimeSpan
+    | field_types.ArrayTimeSpan
+    | field_types.FieldNullableTimeSpan
+    | field_types.FieldDateTime
+    | field_types.ArrayDateTime
+    | field_types.FieldNullableDateTime
     | field_types.FieldColor
     | field_types.ArrayColor
     | field_types.FieldNullableColor
@@ -383,6 +389,12 @@ def _init_type_registry() -> None:
     _register_type("string[]", field_types.ArrayString)
     _register_type("Uri", field_types.FieldUri)
     _register_type("Uri[]", field_types.ArrayUri)
+    _register_type("TimeSpan", field_types.FieldTimeSpan)
+    _register_type("TimeSpan[]", field_types.ArrayTimeSpan)
+    _register_type("TimeSpan?", field_types.FieldNullableTimeSpan)
+    _register_type("DateTime", field_types.FieldDateTime)
+    _register_type("DateTime[]", field_types.ArrayDateTime)
+    _register_type("DateTime?", field_types.FieldNullableDateTime)
 
     # Color fields
     _register_type("color", field_types.FieldColor)

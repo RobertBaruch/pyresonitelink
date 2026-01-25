@@ -162,10 +162,10 @@ class Client:
         return self.sync_send_message(request, responses.SlotData, debug, timeout)
 
     async def get_component(
-        self, request: messages.GetComponent
+        self, request: messages.GetComponent, debug: bool = False
     ) -> responses.ComponentData:
         """Sends a GetComponent request and waits for the response."""
-        return await self.send_message(request, responses.ComponentData)
+        return await self.send_message(request, responses.ComponentData, debug)
 
     def sync_get_component(
         self,
@@ -221,9 +221,11 @@ class Client:
         """Sends a RemoveSlot request and waits for the response."""
         return self.sync_send_message(request, responses.Response, debug, timeout)
 
-    async def add_component(self, request: messages.AddComponent) -> responses.Response:
+    async def add_component(
+        self, request: messages.AddComponent, debug: bool = False
+    ) -> responses.Response:
         """Sends an AddComponent request and waits for the response."""
-        return await self.send_message(request, responses.Response)
+        return await self.send_message(request, responses.Response, debug)
 
     def sync_add_component(
         self,

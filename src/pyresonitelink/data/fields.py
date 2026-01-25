@@ -366,6 +366,48 @@ class ArrayUri(Member):
     values: list[str] = field(default_factory=list[str])
 
 
+@dataclass
+class FieldTimeSpan(Member):
+    """Field containing a TimeSpan value (serialized as string)."""
+
+    value: str | None = None
+
+
+@dataclass
+class ArrayTimeSpan(Member):
+    """Array of TimeSpan values."""
+
+    values: list[str] = field(default_factory=list[str])
+
+
+@dataclass
+class FieldNullableTimeSpan(Member):
+    """Field containing an optional TimeSpan value."""
+
+    value: str | None = None
+
+
+@dataclass
+class FieldDateTime(Member):
+    """Field containing a DateTime value (serialized as string)."""
+
+    value: str | None = None
+
+
+@dataclass
+class ArrayDateTime(Member):
+    """Array of DateTime values."""
+
+    values: list[str] = field(default_factory=list[str])
+
+
+@dataclass
+class FieldNullableDateTime(Member):
+    """Field containing an optional DateTime value."""
+
+    value: str | None = None
+
+
 # =============================================================================
 # Color Fields
 # =============================================================================

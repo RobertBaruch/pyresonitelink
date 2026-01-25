@@ -24,7 +24,12 @@ from pyresonitelink.data import workers
 class TestValues:
 
     async def _add_test_component(
-        self, resolink: client.Client, slot_id: str, component_type: str
+        self,
+        resolink: client.Client,
+        slot_id: str,
+        component_type: str,
+        debug: bool = False,
+        members: dict[str, fields.Member] | None = None,
     ) -> str:
         component_id = str(uuid.uuid4())
         response = await resolink.add_component(
@@ -33,18 +38,20 @@ class TestValues:
                 data=workers.Component(
                     id=component_id,
                     componentType=component_type,
+                    members=members or {},
                 ),
             ),
+            debug,
         )
         assert isinstance(response, responses.Response)
         assert response.success is True
         return component_id
 
     async def _get_component(
-        self, resolink: client.Client, component_id: str
+        self, resolink: client.Client, component_id: str, debug: bool = False
     ) -> responses.ComponentData:
         response = await resolink.get_component(
-            messages.GetComponent(componentId=component_id)
+            messages.GetComponent(componentId=component_id), debug
         )
         assert response.success is True
         return response
@@ -203,7 +210,7 @@ class TestValues:
         assert byte_field.value == np.uint8(123)
 
     @pytest.mark.asyncio(loop_scope="session")
-    @pytest.mark.parametrize("value_type", ["TimeSpan"])
+    @pytest.mark.parametrize("value_type", ["DateTime"])
     async def test_add_valuefield_component(
         self, resolink: client.Client, test_slot_id: str, value_type: str
     ) -> None:
@@ -212,9 +219,12 @@ class TestValues:
 
         component_type = f"[FrooxEngine]FrooxEngine.ValueField<{value_type}>"
         component_id = await self._add_test_component(
-            resolink, test_slot_id, component_type
+            resolink, test_slot_id, component_type, debug=True,
+            members={
+                "Value": fields.FieldDateTime(value="1970-01-01T00:00:00W")
+            }
         )
-        response = await self._get_component(resolink, component_id)
+        response = await self._get_component(resolink, component_id, True)
         component = components.Component.unmarshal(response)
 
         assert component is not None
