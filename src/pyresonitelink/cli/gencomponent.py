@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 import argparse
+import pathlib
 import sys
-from pathlib import Path
+
+from pyresonitelink import codegen
 
 
 def main() -> int:
-    """Main entry point for the component generator CLI."""
+    """Main entry point for the component generator CLI.
+
+    Parses command-line arguments and generates Python component classes
+    from Resonite JSON schema files.
+
+    Returns:
+        Exit code: 0 on success, 1 on error.
+    """
     parser = argparse.ArgumentParser(
         description="Generate Python component classes from Resonite JSON schemas",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -27,14 +36,14 @@ Examples:
 
     parser.add_argument(
         "schema_dir",
-        type=Path,
+        type=pathlib.Path,
         help="Directory containing component .schema.json files",
     )
 
     parser.add_argument(
         "--output-dir",
         "-o",
-        type=Path,
+        type=pathlib.Path,
         default=None,
         help="Output directory for generated Python files "
         "(default: src/pyresonitelink/components/generated)",
@@ -42,7 +51,7 @@ Examples:
 
     parser.add_argument(
         "--common-schema",
-        type=Path,
+        type=pathlib.Path,
         default=None,
         help="Path to common.schema.json (auto-detected from schema_dir if not specified)",
     )
@@ -72,7 +81,7 @@ Examples:
     args = parser.parse_args()
 
     # Validate schema directory
-    schema_dir: Path = args.schema_dir
+    schema_dir: pathlib.Path = args.schema_dir
     if not schema_dir.exists():
         print(f"Error: Schema directory not found: {schema_dir}", file=sys.stderr)
         return 1
@@ -82,7 +91,7 @@ Examples:
         return 1
 
     # Find common schema
-    common_schema_path: Path | None = args.common_schema
+    common_schema_path: pathlib.Path | None = args.common_schema
     if common_schema_path is None:
         common_schema_path = schema_dir / "common.schema.json"
         if not common_schema_path.exists():
@@ -93,11 +102,11 @@ Examples:
             common_schema_path = None
 
     # Determine output directory
-    output_dir: Path | None = args.output_dir
+    output_dir: pathlib.Path | None = args.output_dir
     if output_dir is None:
         # Try to find the pyresonitelink package
         # Look for src/pyresonitelink relative to cwd
-        cwd = Path.cwd()
+        cwd = pathlib.Path.cwd()
         possible_paths = [
             cwd / "src" / "pyresonitelink" / "components" / "generated",
             cwd / "pyresonitelink" / "components" / "generated",
@@ -113,12 +122,9 @@ Examples:
     if not args.dry_run:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Import generator (late import to avoid circular imports)
-    from pyresonitelink.codegen import CodeGenerator, SchemaParser
-
     # Initialize parser and generator
-    parser_instance = SchemaParser(common_schema_path)
-    generator = CodeGenerator(parser_instance)
+    schema_parser = codegen.SchemaParser(common_schema_path)
+    generator = codegen.CodeGenerator(schema_parser)
 
     # Find schema files to process
     if args.component:
