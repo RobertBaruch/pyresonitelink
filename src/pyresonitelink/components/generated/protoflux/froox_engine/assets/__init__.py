@@ -1,0 +1,1 @@
+"""Generated Assets components."""

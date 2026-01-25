@@ -1,0 +1,1 @@
+"""Generated Characters components."""

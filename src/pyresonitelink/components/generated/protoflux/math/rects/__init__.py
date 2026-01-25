@@ -1,0 +1,1 @@
+"""Generated Rects components."""
