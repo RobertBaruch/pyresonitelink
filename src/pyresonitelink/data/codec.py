@@ -343,6 +343,7 @@ def _init_type_registry() -> None:
     _register_type("syncList", member_types.SyncList)
     _register_type("syncObject", member_types.SyncObject)
     _register_type("emptyElement", member_types.EmptyElement)
+    _register_type("empty", member_types.EmptyElement)
     _register_type("enum", member_types.FieldEnum)
 
     # Primitive Fields - standalone types
